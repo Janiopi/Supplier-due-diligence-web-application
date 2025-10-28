@@ -17,7 +17,9 @@ namespace DueDiligence.API.Controllers
             _supplierRepository = supplierRepository;
         }
 
-        [HttpPost]
+
+
+        [HttpPost("screen")]
         public async Task<ActionResult<IEnumerable<ScreeningResultDTO>>> ScreenSupplier(ScreeningRequestDTO request)
         {
             if (request.Sources.Count < 1 || request.Sources.Count > 3)
@@ -25,13 +27,14 @@ namespace DueDiligence.API.Controllers
                 return BadRequest("You must select between 1 and 3 sources");
             }
 
-            // Verify that the supplier exists
+            // Get the supplier to use its name for screening
             var supplier = await _supplierRepository.GetByIdAsync(request.SupplierId);
             if (supplier == null)
             {
                 return NotFound("Supplier not found");
             }
 
+            // Now we have the supplier name for better screening results
             var results = await _screeningService.ScreenSupplierAsync(request.SupplierId, request.Sources);
             return Ok(results);
         }
@@ -39,16 +42,17 @@ namespace DueDiligence.API.Controllers
         [HttpGet("sources")]
         public ActionResult<IEnumerable<string>> GetSources()
         {
-            // List of available sources
-            var sources = new List<string> 
-            { 
-                "OFAC", 
-                "PEP List", 
-                "EU Sanctions List",
-                "Financial Fraud List"
+            // List of available sources from your Node.js API
+            var sources = new List<string>
+            {
+                "OffshoreLeaksScraper",
+                "Ofac",
+                "TheWorldBank"
             };
-            
+
             return Ok(sources);
         }
+        
+
     }
 }

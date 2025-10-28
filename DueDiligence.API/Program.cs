@@ -1,5 +1,6 @@
 using DueDiligence.Core.Interfaces;
 using DueDiligence.Infrastructure.Data;
+using DueDiligence.Infrastructure.ExternalServices;
 using DueDiligence.Infrastructure.Repositories;
 using DueDiligence.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,9 @@ builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
 
 // Register services
 builder.Services.AddScoped<IScreeningService, ScreeningService>();
+
+// Add this after the other service registrations
+builder.Services.AddHttpClient<ScreeningApiClient>();
 
 // Configure CORS
 builder.Services.AddCors(options =>
