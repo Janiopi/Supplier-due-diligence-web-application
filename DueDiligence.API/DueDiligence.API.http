@@ -1,0 +1,6 @@
+@DueDiligence.API_HostAddress = http://localhost:5124
+
+GET {{DueDiligence.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
