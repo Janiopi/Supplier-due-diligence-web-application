@@ -15,9 +15,9 @@ This README explains the architecture, key concepts, and how to run the project 
 - [Project Structure](#project-structure)
 - [Features](#features)
 - [Local setup & run](#local-setup--run)
-  - [Database (SQL Server via Docker)](#database-sql-server-via-docker)
-  - [Run Backend (API)](#run-backend-api)
-  - [Run Frontend (React)](#run-frontend-react)
+  - [Database (SQL Server via Docker)](#2-database-sql-server-via-docker)
+  - [Run Backend (API)](#4-run-the-backend-api)
+  - [Run Frontend (React)](#5-run-the-frontend-react)
 - [Troubleshooting](#troubleshooting)
 
 ## Architecture
@@ -157,6 +157,9 @@ dotnet run
 ```
 
 By default the API should listen on ports configured in `launchSettings.json` (check `Properties/launchSettings.json` in the API project). The API typically runs at `http://localhost:5124`.
+
+Also you can test the endpoints using swagger `http://localhost:5124/swagger`
+![alt text](screenshots/image.png)
 
 ### 5) Run the frontend (React)
 
