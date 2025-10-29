@@ -20,10 +20,24 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
 
 // Register services
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IScreeningService, ScreeningService>();
 
-// Add this after the other service registrations
+// Register HTTP clients
+builder.Services.AddHttpClient<AuthApiClient>();
 builder.Services.AddHttpClient<ScreeningApiClient>();
+
+// Add session support for token storage
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.IdleTimeout = TimeSpan.FromHours(24);
+});
+
+// Add HTTP context accessor
+builder.Services.AddHttpContextAccessor();
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -46,6 +60,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowReactApp");
+app.UseSession(); // Add session middleware
 app.UseAuthorization();
 app.MapControllers();
 

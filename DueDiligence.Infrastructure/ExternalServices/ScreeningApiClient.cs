@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using DueDiligence.Core.DTOs;
+using DueDiligence.Core.Interfaces;
 using Microsoft.Extensions.Configuration;
 
 namespace DueDiligence.Infrastructure.ExternalServices
@@ -9,22 +10,32 @@ namespace DueDiligence.Infrastructure.ExternalServices
     {
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
-        private readonly string _apiKey; // For JWT authentication
+        private readonly IAuthService _authService;
 
-        public ScreeningApiClient(HttpClient httpClient, IConfiguration configuration)
+        public ScreeningApiClient(HttpClient httpClient, IConfiguration configuration, IAuthService authService)
         {
             _httpClient = httpClient;
             _baseUrl = configuration["ExternalApis:ScreeningApi:BaseUrl"] ?? "http://localhost:3000/api";
-            _apiKey = configuration["ExternalApis:ScreeningApi:ApiKey"] ?? "your-api-key";
+            _authService = authService;
         }
 
         private async Task<string> GetAuthTokenAsync()
         {
-            // This would be replaced with your actual JWT authentication logic
-            // For example, you might need to make a login request first
+            var token = _authService.GetCurrentToken();
             
-            // For now, we'll assume you already have the token
-            return _apiKey;
+            if (string.IsNullOrEmpty(token))
+            {
+                throw new UnauthorizedAccessException("No authentication token available. Please login first.");
+            }
+
+            // Validate token before using it
+            var isValid = await _authService.ValidateTokenAsync(token);
+            if (!isValid)
+            {
+                throw new UnauthorizedAccessException("Authentication token is invalid or expired. Please login again.");
+            }
+
+            return token;
         }
 
         public async Task<ScreeningResponseDTO> SearchEntityAsync(string entityName, List<string> sources)
