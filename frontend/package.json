@@ -25,6 +25,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
+  "proxy": "https://web-scraping-for-high-risk-entities-lwp7.onrender.com",
   "eslintConfig": {
     "extends": [
       "react-app",
