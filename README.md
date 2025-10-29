@@ -9,18 +9,75 @@ This repository contains a clean-architecture web application for supplier due d
 
 This README explains the architecture, key concepts, and how to run the project locally for development.
 
-## Indexx
+## Index
 
 - [Architecture](#architecture)
-- [Key concepts](#key-concepts)
-- [Prerequisites](#prerequisites)
+- [Project Structure](#project-structure)
+- [Features](#features)
 - [Local setup & run](#local-setup--run)
   - [Database (SQL Server via Docker)](#database-sql-server-via-docker)
   - [Run Backend (API)](#run-backend-api)
   - [Run Frontend (React)](#run-frontend-react)
-- [Environment variables & config](#environment-variables--config)
 - [Troubleshooting](#troubleshooting)
-- [Next steps / improvements](#next-steps--improvements)
+
+## Architecture
+
+![alt text](screenshots/diagram-export-10-28-2025-7_59_29-PM.png)
+
+The project follows a Clean Architecture pattern with clear separation of concerns:
+
+- **DueDiligence.API** — Presentation layer (Controllers, middleware, configuration)
+- **DueDiligence.Core** — Domain layer (Entities, DTOs, service interfaces)
+- **DueDiligence.Infrastructure** — Data access and external services (EF Core, HTTP clients)
+- **Frontend** — React SPA consuming the .NET API and external screening services
+
+### Key Design Principles
+
+- **Dependency Inversion**: Core defines interfaces, Infrastructure implements them
+- **JWT Authentication**: Token-based auth with automatic token refresh
+- **External API Integration**: Separation between local supplier data and external screening services
+- **CORS Handling**: Development proxy configuration for seamless API integration
+
+### Authentication Flow
+
+1. User logs in via Frontend → Auth Controller
+2. JWT token returned and stored in localStorage
+3. Axios interceptors attach token to subsequent requests
+4. JWT Middleware validates tokens on protected endpoints
+
+### Data Flow
+
+- **Suppliers**: Frontend ↔ .NET API ↔ Infrastructure ↔ SQL Server
+- **Screening**: Frontend → External Node.js API (direct or via proxy)
+- **Results**: Can be stored locally in SQL Server or consumed directly from external API
+
+## Project Structure
+
+```
+├── DueDiligence.API/              # ASP.NET Web API (Controllers, Program.cs)
+│   ├── Controllers/               # REST API endpoints
+│   ├── Properties/               # Launch settings
+│   └── appsettings*.json         # Configuration files
+├── DueDiligence.Core/            # Domain layer (DTOs, Entities, Interfaces)
+│   ├── DTOs/                     # Data Transfer Objects
+│   ├── Entities/                 # Domain entities
+│   └── Interfaces/               # Service and repository contracts
+├── DueDiligence.Infrastructure/   # Data & External Services layer
+│   ├── Data/                     # EF Core DbContext
+│   ├── ExternalServices/         # HTTP clients for external APIs
+│   ├── Migrations/               # EF Core migrations
+│   ├── Repositories/             # Data access implementations
+│   └── Services/                 # Service implementations
+├── frontend/                     # React SPA
+│   ├── public/                   # Static assets
+│   ├── src/
+│   │   ├── components/           # Reusable React components
+│   │   ├── contexts/             # React contexts (auth, etc.)
+│   │   ├── pages/                # Page components
+│   │   └── services/             # API client services
+│   └── package.json              # Frontend dependencies & scripts
+└── README.md                     # This file
+```
 
 ## Architecture
 
@@ -34,7 +91,7 @@ This separation keeps business rules and data contracts in `Core`, while `Infras
 
 **Frontend:** a React single-page application under `frontend/` that consumes the .NET API for suppliers and a Node.js screening API (deployed externally).
 
-## Key concepts
+## Features
 
 - **Authentication:** JWT tokens are issued by the auth endpoint and stored in the browser (localStorage) by the frontend. Axios interceptors attach the token to requests.
 - **Persistence:** EF Core is used in `Infrastructure` with a SQL Server database. Migrations are included under `DueDiligence.Infrastructure/Migrations`.
@@ -141,43 +198,32 @@ If you get a CORS error calling the external screening API in the browser, there
 
 ## Troubleshooting
 
+### Common Database Issues
+
+- **SQL Server connection errors:** Ensure the Docker container is running with `docker ps`. If not, start it with the command from step 2.
+- **Login failed for user 'sa':** The connection string password must exactly match the Docker container password. Check that `appsettings.json` has the same password as the Docker `-e "SA_PASSWORD=..."` parameter.
+- **Database not created:** Run the EF Core migrations: `dotnet ef database update --project DueDiligence.Infrastructure --startup-project DueDiligence.API`
+
+### API Issues
+
 - **CORS errors in the browser:** confirm the remote API returns `Access-Control-Allow-Origin` and responds to OPTIONS preflight. For local APIs, add CORS middleware in `Program.cs` and allow `http://localhost:3000`.
 - **Backend not reachable:** verify `dotnet run` output and the configured Kestrel URLs. Use `curl` to test endpoints (example: `curl -i http://localhost:5124/api/suppliers`).
-- **Database errors:** confirm SQL Server container is running and the connection string has the correct password/port.
+- **Port conflicts:** If port 5124 is in use, check `Properties/launchSettings.json` to see configured ports or set `ASPNETCORE_URLS=http://localhost:5125`.
+
+### Frontend Issues
+
 - **React dev server errors:** delete `node_modules` and reinstall (`npm ci` or `npm install`) and ensure `react-scripts` is installed.
+- **Proxy errors:** If the external API proxy isn't working, remove the `proxy` line from `package.json` and update the API configuration in `frontend/src/services/api.js`.
 
-## Project Structure
+### Quick Validation Commands
 
+```bash
+# Check if SQL Server container is running
+docker ps | grep dds-sqlserver
+
+# Test API endpoints
+curl -i http://localhost:5124/api/suppliers
+
+# Check frontend is accessible
+curl -i http://localhost:3000
 ```
-├── DueDiligence.API/              # ASP.NET Web API (Controllers, Program.cs)
-│   ├── Controllers/               # REST API endpoints
-│   ├── Properties/               # Launch settings
-│   └── appsettings*.json         # Configuration files
-├── DueDiligence.Core/            # Domain layer (DTOs, Entities, Interfaces)
-│   ├── DTOs/                     # Data Transfer Objects
-│   ├── Entities/                 # Domain entities
-│   └── Interfaces/               # Service and repository contracts
-├── DueDiligence.Infrastructure/   # Data & External Services layer
-│   ├── Data/                     # EF Core DbContext
-│   ├── ExternalServices/         # HTTP clients for external APIs
-│   ├── Migrations/               # EF Core migrations
-│   ├── Repositories/             # Data access implementations
-│   └── Services/                 # Service implementations
-├── frontend/                     # React SPA
-│   ├── public/                   # Static assets
-│   ├── src/
-│   │   ├── components/           # Reusable React components
-│   │   ├── contexts/             # React contexts (auth, etc.)
-│   │   ├── pages/                # Page components
-│   │   └── services/             # API client services
-│   └── package.json              # Frontend dependencies & scripts
-└── README.md                     # This file
-```
-
-## Next steps / improvements
-
-- Harden authentication and refresh token flows.
-- Add automated tests for backend services and controllers.
-- Add CI pipelines for build + tests and optional Docker compose for local orchestration (API + DB + frontend).
-- Improve screening result visualization and add export/reporting.
-- Add comprehensive error handling and logging.
